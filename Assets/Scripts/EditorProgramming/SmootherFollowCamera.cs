@@ -2,24 +2,41 @@ using UnityEngine;
 
 public class SmootherFollowCamera : MonoBehaviour
 {
-    [SerializeField] private float _speed;
-    [SerializeField] private AnimationCurve _smoothnessCurve;
-    [SerializeField] private Transform _targetObject;
+    [SerializeField][Range(0.1f, 1)] private float _speed = 1f;
+    [SerializeField] private AnimationCurve _animationCurve;
+    public Transform TargetObject;
 
-    public Transform TargetObject => _targetObject;
+    private Vector3 _initalOffset;
 
-    private Vector3 initalOffset;
-    private Vector3 cameraPosition;
+    private Vector3 _startPosition;
+    private Vector3 _targetPosition;
+    private Vector3 _lastTargetObjectPosition;
+    private float _animationTime;
 
     void Start()
-    {  
-        initalOffset = transform.position - _targetObject.position;
+    {
+        _initalOffset = transform.position - TargetObject.position;
+        UpdatePath();
     }
 
     void FixedUpdate()
     {
-        cameraPosition = _targetObject.position + initalOffset;
-        var smoothness = _smoothnessCurve.Evaluate(Time.fixedDeltaTime) * _speed;
-        transform.position = Vector3.Lerp(transform.position, cameraPosition, smoothness);
+        if (TargetObject.position != _lastTargetObjectPosition)
+        {
+            UpdatePath();
+        }
+
+        _animationTime += Time.deltaTime;
+
+        var step = _animationCurve.Evaluate(_animationTime * 1 / _speed);
+        transform.position = Vector3.Lerp(_startPosition, _targetPosition, step);
+    }
+
+    private void UpdatePath()
+    {
+        _startPosition = transform.position;
+        _targetPosition = TargetObject.position + _initalOffset;
+        _lastTargetObjectPosition = TargetObject.position;
+        _animationTime = 0;
     }
 }
